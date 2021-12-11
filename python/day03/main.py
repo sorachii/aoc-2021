@@ -1,28 +1,41 @@
 #!/usr/bin/env python3
 
-gamma   = ["0" for _ in range(12)]
-epsilon = ["0" for _ in range(12)]
-counter = [0 for _ in range(12)]
-
+n_bits = 12
 with open("input", 'r') as f:
-   bnums = [line.strip() for line in f.readlines()] 
+    nums = tuple(int(line.strip(), 2) for line in f.readlines()) 
 
-for bnum in bnums:
-    for i, digit in enumerate(bnum):
-        counter[i] += int(digit)
+def most_common_bit(nums, shift):
+    n_ones = sum(((n >> shift) & 1) for n in nums)
+    return 1 if n_ones > len(nums) // 2 - 1 else 0
 
-for i, num in enumerate(counter):
-    if num > len(bnums) / 2:
-        print(i, num)
-        gamma[i] = "1"
-        epsilon[i] = "0"
-    else:
-        gamma[i] = "0"
-        epsilon[i] = "1"
+def least_common_bit(nums, shift):
+    return 1 - most_common_bit(nums, shift)
 
-gamma_bin = "".join(gamma)
-epsilon_bin = "".join(epsilon)
+def most_common_bits(nums, n_bits):
+    res = 0
+    for shift in range(n_bits - 1, -1, -1):
+        res <<= 1
+        res += most_common_bit(nums, shift)
+    return res
 
-print(counter)
-print(gamma_bin, epsilon_bin)
-print(int(gamma_bin, 2) * int(epsilon_bin, 2))
+def filter_numbers(nums, n_bits, predicate):
+    for shift in range(n_bits - 1, -1, -1):
+        bit  = predicate(nums, shift)
+        nums = tuple(filter(lambda n: (n >> shift) & 1 == bit, nums))
+        if len(nums) == 1:
+            break
+    return nums[0]
+
+
+def part1(nums, n_bits):
+    gamma = most_common_bits(nums, n_bits)
+    eps = (1 << n_bits) - gamma - 1
+    return gamma * eps
+
+def part2(nums, n_bits):
+    oxy    = filter_numbers(nums, n_bits, most_common_bit)
+    co2    = filter_numbers(nums, n_bits, least_common_bit)
+    return oxy * co2
+
+print(part1(nums, n_bits))
+print(part2(nums, n_bits))
